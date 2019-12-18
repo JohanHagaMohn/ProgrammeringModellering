@@ -1,0 +1,38 @@
+{
+    "lever" : {
+        "image" : ".\/Grafikk\/Lever.png",
+        "movement" : [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)],
+        "scalar" : 1,
+        "position" : [(4, 0)]
+    },
+    "hjerte" : {
+        "image" : ".\/Grafikk\/Hjerte.png",
+        "movement" : [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)],
+        "scalar" : 8,
+        "position" : [(3, 0)]
+    },
+    "hjerne" : {
+        "image" : ".\/Grafikk\/Hjerne.png",
+        "movement" : [(1, 1), (1, -1), (-1, 1), (-1, -1)],
+        "scalar" : 8,
+        "position" : [(2, 0), (5, 0)]
+    },
+    "bukspyttkjertel" : {
+        "image" : ".\/Grafikk\/Bukspyttkjertel.png",
+        "movement" : [(1, 2), (-1, 2), (-2, 1), (-2, -1), (-1, -2), (1, -2), (2, 1), (2, -1)],
+        "scalar" : 1,
+        "position" : [(1, 0), (6, 0)]
+    },
+    "nyerer" : {
+        "image" : ".\/Grafikk\/Nyrer.png",
+        "movement" : [(1, 0), (0, 1), (-1, 0), (0, -1)],
+        "scalar" : 8,
+        "position" : [(0, 0), (7, 0)]
+    },
+    "tarm" : {
+        "image" : ".\/Grafikk\/Tarm.png",
+        "movement" : [(0, 1)],
+        "scalar" : 1,
+        "position" : [(1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7)]
+    }
+}
