@@ -8,8 +8,6 @@ WINDOW = pg.display.set_mode(DEFAULT, pg.RESIZABLE)
 SIZE = DEFAULT
 TITLE = True
 TILE = [71, 71]
-CHECKED = False
-TURN = True
 
 
 def main():
@@ -60,6 +58,7 @@ class Board():
         """ Lager en tom 8x8 liste og kjører create_pieces som initialiserer brettet. """
 
         self.board = [[None for i in range(8)] for i in range(8)]
+        self.checked = False
         self.create_pieces()
 
     def create_pieces(self):
@@ -86,7 +85,7 @@ class Board():
                             "player": player,
                             "movement": movement,
                             "image": value["image"],
-                            "checked": False
+                            "checked": []
                         }
 
     def move(self, old, new):
@@ -107,14 +106,14 @@ class Board():
         self.board[old[0]][old[1]] = None
 
         # Oppdaterer og tar bort eventuelle markeringer
-        self.update(True)
+        self.update()
 
     def coordinates(self, i, j):
         """ Returnerer approx. pixel-verdier til hver av rutene basert på indexen. """
 
         return [328 + 79 * j, 88 + 79 * i]
 
-    def update(self, remove=False):
+    def update(self):
         """ Oppdaterer skjermen. """
 
         blit("Sjakkbrett.png")
@@ -124,57 +123,73 @@ class Board():
         for i in range(8):
             for j in range(8):
                 if self.board[i][j]:
-                    # Hvis ruten ikke er tom, ser jeg om noe skal forsvinne
-                    if remove:
-                        # Tar bort eventuelle markøringer og går videre
-                        if self.board[i][j]["image"] == "Tile.png":
-                            self.board[i][j] = None
-                            continue
-                        elif self.board[i][j]["checked"]:
-                            self.board[i][j]["checked"] = False
-
                     # Legger til bilde og eventuelle markøringer
-                    if self.board[i][j]["image"]:
-                        blit(self.board[i][j]["image"], TILE,
-                             self.coordinates(i, j))
-                    if self.board[i][j]["image"] != "Tile.png" and self.board[
-                            i][j]["checked"]:
-                        blit("Tile.png", TILE, self.coordinates(i, j))
+                    blit(self.board[i][j]["image"], TILE,
+                         self.coordinates(i, j))
+                    if self.board[i][j]["checked"]:
+                        for x, y in self.board[i][j]["checked"]:
+                            blit("Tile.png", TILE, self.coordinates(x, y))
 
     def check(self, piece, pos):
-        """ global CHECKED
-        if CHECKED and self.board[pos[0]][pos[1]]:
-            if self.board[pos[0]][pos[1]]["checked"]:
-                self.move(self.board[pos[0]][pos[1]]["checked"], pos)
-            CHECKED = False
-        elif piece:
-            for i in range(len(piece["movement"])):
-                for j in range(len(piece["movement"][i])):
-                    movement = array(piece["movement"][i][j])
-                    if piece["player"]:
-                        movement *= -1
-                    movement[0], movement[1] = movement[1], movement[0]
-                    coord = (array(pos) + movement).tolist()
-                    if coord[0] > 7 or coord[0] < 0 or coord[1] > 7 or coord[
-                            0] < 0:
-                        if len(piece["movement"]) == 1:
-                            continue
-                        else:
+        if not self.checked:
+            if not piece["checked"]:
+                for i in range(len(piece["movement"][0])):
+                    for j in range(len(piece["movement"])):
+                        movement = array(piece["movement"][j][i])
+                        if piece["player"]:
+                            movement *= -1
+                        movement[0], movement[1] = movement[1], movement[0]
+                        coord = (array(pos) + movement).tolist()
+                        if coord[0] < 0 or coord[0] > 7 or coord[
+                                1] < 0 or coord[1] > 7:
                             break
-                    elif self.board[coord[0]][coord[1]]:
-                        if self.board[coord[0]][coord[1]]["player"] == TURN:
+                        piece["checked"].append(coord)
+                        if self.board[coord[0]][coord[1]]:
                             break
-                        else:
-                            self.board[coord[0]][coord[1]]["checked"] = pos
-                            break
-                    else:
-                        self.board[coord[0]][coord[1]] = {
-                            "image": "Tile.png",
-                            "checked": pos
-                        }
-            CHECKED = True
-            self.update() """
-        global TURN, CHECKED
+                if piece["checked"]:
+                    self.checked = pos
+                    self.update()
+        else:
+            self.board[self.checked[0]][self.checked[1]]["checked"] = []
+            self.move(self.checked, pos)
+            self.checked = False
+
+        # if player's move: (if not piece or piece["player"])
+
+        # player's move is false
+        
+
+    def select(self, pos):
+        """ Går igjennom hitboksen og finner indexen. """
+        for i in range(8):
+            for j in range(8):
+                if self.board[i][j] or self.checked:
+                    coords = self.coordinates(i, j)
+                    if hitbox(
+                            pos,
+                        [(coords[0], coords[1] - 6 - round(4.5 * i)),
+                         (70 + coords[0], 61 + coords[1] - round(4.5 * i))]):
+                        self.check(self.board[i][j], [i, j])
+
+
+def blit(path, dim=DEFAULT, pos=(0, 0)):
+    """ Legger bilder til på skjermen. """
+
+    WINDOW.blit(pg.transform.scale(pg.image.load(f"./Media/{path}"), dim), pos)
+
+
+def hitbox(pos, coords):
+    """ Finner ut om et museklikk er innenfor en hitboks, uavhendig av skjermoppløsning. """
+
+    scaling = array([SIZE[0] / DEFAULT[0], SIZE[1] / DEFAULT[1]])
+    coords = array(coords) * scaling
+    return all(pos[i] > coords[0][i] and pos[i] < coords[1][i]
+               for i in range(2))
+
+
+if __name__ == "__main__":
+    main()
+""" global TURN, CHECKED
         if piece and not CHECKED:
             for i in range(len(piece["movement"])):
                 for j in range(len(piece["movement"][i])):
@@ -206,38 +221,40 @@ class Board():
         elif CHECKED and self.board[pos[0]][pos[1]]:
             if self.board[pos[0]][pos[1]]["checked"]:
                 self.move(self.board[pos[0]][pos[1]]["checked"], pos)
-        CHECKED = not CHECKED
+        CHECKED = not CHECKED """
 
-    def select(self, pos):
-        """ Går igjennom hitboksen og finner indexen. """
-        for i in range(8):
-            for j in range(8):
-                if self.board[i][j] or CHECKED:
-                    coords = self.coordinates(i, j)
-                    if hitbox(
-                            pos,
-                        [(coords[0], coords[1] - 6 - round(4.5 * i)),
-                         (70 + coords[0], 61 + coords[1] - round(4.5 * i))]):
-                        self.check(self.board[i][j], [i, j])
-
-
-def blit(path, dim=DEFAULT, pos=(0, 0)):
-    """ Legger bilder til på skjermen. """
-
-    WINDOW.blit(pg.transform.scale(pg.image.load(f"./Media/{path}"), dim), pos)
-
-
-def hitbox(pos, coords):
-    """ Finner ut om et museklikk er innenfor en hitboks, uavhendig av skjermoppløsning. """
-
-    scaling = array([SIZE[0] / DEFAULT[0], SIZE[1] / DEFAULT[1]])
-    coords = array(coords) * scaling
-    return all(pos[i] > coords[0][i] and pos[i] < coords[1][i]
-               for i in range(2))
-
-
-if __name__ == "__main__":
-    main()
+""" global CHECKED
+        if CHECKED and self.board[pos[0]][pos[1]]:
+            if self.board[pos[0]][pos[1]]["checked"]:
+                self.move(self.board[pos[0]][pos[1]]["checked"], pos)
+            CHECKED = False
+        elif piece:
+            for i in range(len(piece["movement"])):
+                for j in range(len(piece["movement"][i])):
+                    movement = array(piece["movement"][i][j])
+                    if piece["player"]:
+                        movement *= -1
+                    movement[0], movement[1] = movement[1], movement[0]
+                    coord = (array(pos) + movement).tolist()
+                    if coord[0] > 7 or coord[0] < 0 or coord[1] > 7 or coord[
+                            0] < 0:
+                        if len(piece["movement"]) == 1:
+                            continue
+                        else:
+                            break
+                    elif self.board[coord[0]][coord[1]]:
+                        if self.board[coord[0]][coord[1]]["player"] == TURN:
+                            break
+                        else:
+                            self.board[coord[0]][coord[1]]["checked"] = pos
+                            break
+                    else:
+                        self.board[coord[0]][coord[1]] = {
+                            "image": "Tile.png",
+                            "checked": pos
+                        }
+            CHECKED = True
+            self.update() """
 """ global TURN, CHECKED
         if piece and not CHECKED:
             for i in range(len(piece["movement"])):
