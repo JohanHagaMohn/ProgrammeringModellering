@@ -1,0 +1,1 @@
+# Eit halvfungerande spel basert på det klassiske mordspelet sjakk.

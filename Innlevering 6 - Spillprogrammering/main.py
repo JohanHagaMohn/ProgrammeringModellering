@@ -97,7 +97,6 @@ class Board():
             try:
                 if self.board[new[0]][new[1]]["name"] == "Lever":
                     # Starter så på nytt
-                    TITLE = True
                     self.__init__()
                     return 0
             except KeyError:
