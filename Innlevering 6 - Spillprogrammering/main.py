@@ -51,11 +51,26 @@ def main():
 
 
 def menu():
-    """ Legger til bakgrunn """
+    """ Legger til bakgrunn. """
     global TITLE
     TITLE = True
     blit("Bakgrunn.jpg")
     blit("Startmeny.png")
+
+
+def blit(path, dim=DEFAULT, pos=(0, 0)):
+    """ Legger bilder til på skjermen. """
+
+    WINDOW.blit(pg.transform.scale(pg.image.load(f"./Media/{path}"), dim), pos)
+
+
+def hitbox(pos, coords):
+    """ Finner ut om et museklikk er innenfor en hitboks, uavhengig av skjermoppløsning. """
+
+    scaling = array([SIZE[0] / DEFAULT[0], SIZE[1] / DEFAULT[1]])
+    coords = array(coords) * scaling
+    return all(pos[i] > coords[0][i] and pos[i] < coords[1][i]
+               for i in range(2))
 
 
 class Board():
@@ -65,6 +80,7 @@ class Board():
 
         self.board = [[None for i in range(8)] for i in range(8)]
         self.checked = False
+        self.player = True
         self.create_pieces()
 
     def create_pieces(self):
@@ -139,9 +155,13 @@ class Board():
 
     def check(self, piece, pos):
         """ Sjekker om brikken skal flyttes eller om lovlige trekk skal vises. """
-
+        
         # Er ingenting selektert?
         if not self.checked:
+            # Sjekker om brikken som markeres er riktig.
+            if piece:
+                if piece["player"] != self.player:
+                    return 0
             # Går igjennom trekkene i skalerende rekkefølge
             for i in range(len(piece["movement"][0])):
                 for j in range(len(piece["movement"])):
@@ -173,8 +193,7 @@ class Board():
                             break
                     # Hvis trekket møter en egen brikke, gå til neste retning
                     elif self.board[coord[0]][coord[1]]:
-                        if self.board[coord[0]][
-                                coord[1]]["player"] == piece["player"]:
+                        if self.board[coord[0]][coord[1]]["player"] == piece["player"]:
                             break
                     # Legger til trekket
                     piece["checked"].append(coord)
@@ -187,6 +206,10 @@ class Board():
                 self.checked = pos
                 self.update()
         else:
+            # Sjekker om brikken som flyttes er riktig.
+            if self.board[self.checked[0]][
+                self.checked[1]]["player"] != self.player:
+                return 0
             # Finner ut om trekket sammenfaller med et gyldig trekk
             valid = pos in self.board[self.checked[0]][
                 self.checked[1]]["checked"]
@@ -223,14 +246,13 @@ class Board():
             self.board[self.checked[0]][self.checked[1]]["checked"] = []
             # Flytter brikken om trekket er gyldig, ellers tas bort markørene
             if valid:
+                # Bytter tur
+                self.player = not self.player
                 self.move(self.checked, pos)
             else:
                 self.update()
             # Resetter checked
             self.checked = False
-        # if player's move: (if not piece or piece["player"])
-
-        # player's move is false
 
     def select(self, pos):
         """ Går igjennom hitboksen og finner indexen. """
@@ -245,243 +267,5 @@ class Board():
                         self.check(self.board[i][j], [i, j])
 
 
-def blit(path, dim=DEFAULT, pos=(0, 0)):
-    """ Legger bilder til på skjermen. """
-
-    WINDOW.blit(pg.transform.scale(pg.image.load(f"./Media/{path}"), dim), pos)
-
-
-def hitbox(pos, coords):
-    """ Finner ut om et museklikk er innenfor en hitboks, uavhengig av skjermoppløsning. """
-
-    scaling = array([SIZE[0] / DEFAULT[0], SIZE[1] / DEFAULT[1]])
-    coords = array(coords) * scaling
-    return all(pos[i] > coords[0][i] and pos[i] < coords[1][i]
-               for i in range(2))
-
-
 if __name__ == "__main__":
     main()
-
-# Ubrukelige versjoner av board.check():
-""" global TURN, CHECKED
-        if piece and not CHECKED:
-            for i in range(len(piece["movement"])):
-                for j in range(len(piece["movement"][i])):
-                    movement = array(piece["movement"][i][j])
-                    if piece["player"]:
-                        movement *= -1
-                    movement[0], movement[1] = movement[1], movement[0]
-                    coord = (array(pos) + movement).tolist()
-                    print(piece, coord, movement, pos)
-                    if coord[0] < 0 or coord[0] > 7 or coord[1] < 0 or coord[
-                            1] > 7:
-                        print("heyyy")
-                        break
-                    elif self.board[coord[0]][coord[1]] and self.board[pos[0]][
-                            pos[1]]["name"] != "Bukspyttkjertel":
-                        if self.board[coord[0]][coord[1]]["player"] == TURN:
-                            print("hey")
-                            continue
-                        else:
-                            self.board[coord[0]][coord[1]]["checked"] = pos
-                            print("hi")
-                            break
-                    else:
-                        self.board[coord[0]][coord[1]] = {
-                            "image": "Tile.png",
-                            "checked": pos
-                        }
-            self.update()
-        elif CHECKED and self.board[pos[0]][pos[1]]:
-            if self.board[pos[0]][pos[1]]["checked"]:
-                self.move(self.board[pos[0]][pos[1]]["checked"], pos)
-        CHECKED = not CHECKED """
-""" global CHECKED
-        if CHECKED and self.board[pos[0]][pos[1]]:
-            if self.board[pos[0]][pos[1]]["checked"]:
-                self.move(self.board[pos[0]][pos[1]]["checked"], pos)
-            CHECKED = False
-        elif piece:
-            for i in range(len(piece["movement"])):
-                for j in range(len(piece["movement"][i])):
-                    movement = array(piece["movement"][i][j])
-                    if piece["player"]:
-                        movement *= -1
-                    movement[0], movement[1] = movement[1], movement[0]
-                    coord = (array(pos) + movement).tolist()
-                    if coord[0] > 7 or coord[0] < 0 or coord[1] > 7 or coord[
-                            0] < 0:
-                        if len(piece["movement"]) == 1:
-                            continue
-                        else:
-                            break
-                    elif self.board[coord[0]][coord[1]]:
-                        if self.board[coord[0]][coord[1]]["player"] == TURN:
-                            break
-                        else:
-                            self.board[coord[0]][coord[1]]["checked"] = pos
-                            break
-                    else:
-                        self.board[coord[0]][coord[1]] = {
-                            "image": "Tile.png",
-                            "checked": pos
-                        }
-            CHECKED = True
-            self.update() """
-""" global TURN, CHECKED
-        if piece and not CHECKED:
-            for i in range(len(piece["movement"])):
-                for j in range(len(piece["movement"][i])):
-                    movement = array(piece["movement"][i][j])
-                    if piece["player"]:
-                        movement *= -1
-                    movement[0], movement[1] = movement[1], movement[0]
-                    coord = (array(pos) + movement).tolist()
-                    if coord[0] < 0 or coord[0] > 7 or coord[1] < 0 or coord[
-                            1] > 7:
-                        break
-                    elif self.board[coord[0]][coord[1]]:
-                        if self.board[coord[0]][coord[1]]["player"] == TURN:
-                            break
-                        else:
-                            self.board[coord[0]][coord[1]]["checked"] = pos
-                            break
-                    else:
-                        self.board[coord[0]][coord[1]] = {
-                            "image": "Tile.png",
-                            "checked": pos
-                        }
-            CHECKED = True
-        elif CHECKED and self.board[pos[0]][pos[1]]:
-            if self.board[pos[0]][pos[1]]["checked"]:
-                self.move(self.board[pos[0]][pos[1]]["checked"], pos)
-                CHECKED = False """
-"""global CHECKED
-    if CHECKED:
-        if self.board[pos[0]][pos[1]]:
-            self.move(self.board[pos[0]][pos[1]]["checked"], pos)
-        CHECKED = False
-    elif piece:
-        for i in range(len(piece["movement"])):
-            for j in range(len(piece["movement"][i])):
-                movement = array(piece["movement"][i][j])
-                if piece["player"]:
-                    movement *= -1
-                movement[0], movement[1] = movement[1], movement[0]
-                coord = (array(pos) + movement).tolist()
-                if coord[0] > 7 or coord[0] < 0 or coord[1] > 7 or coord[
-                        0] < 0:
-                    if len(piece["movement"]) == 1:
-                        continue
-                    else:
-                        break
-                if self.board[coord[0]][coord[1]]:
-                    self.board[coord[0]][coord[1]]["checked"] = pos
-                    break
-                else:
-                    self.board[coord[0]][coord[1]] = {
-                        "image": "Tile.png",
-                        "checked": pos
-                    }
-        CHECKED = True
-        self.update()"""
-""" def recur(i, j, tiling, hit=False):
-            if hit or j == len(piece["movement"][i]):
-                return i, j, tiling, True
-            xy = piece["movement"][i][j]
-            if self.board[xy[0]][xy[1]]:
-                self.board[xy[0]][
-                    xy[1]]["tile"] = "Tile.png" if tiling else False
-                self.board[xy[0]][xy[1]]["path"] = pos if tiling else False
-                return i, j, tiling, True
-            else:
-                self.board[xy[0]][xy[1]] = {
-                    "tile": "Tile.png",
-                    "path": pos
-                } if tiling else False
-            return recur(i, j + 1, tiling)
-
-        if CHECKED:
-            self.move(self.board[pos[0]][pos[1]]["path"], pos)
-
-        for i in range(len(piece["movement"])):
-            recur(i, 0, not CHECKED)
-
-        if not CHECKED:
-            self.update()
-
-        print(self.board) """
-""" if CHECKED:
-            coord = self.board[pos[0]][pos[1]]
-            if coord:
-                if coord["image"] == "Tile.png":
-                    self.move(coord["name"], pos)
-                    coord = None
-                elif coord["checked"]:
-                    self.move(coord["checked"], pos)
-                    coord["checked"] = False
-            CHECKED = False
-        elif piece:
-            for i in range(len(piece["movement"])):
-                for j in range(len(piece["movement"][i])):
-                    movement = array(piece["movement"][i][j])
-                    if piece["player"]:
-                        movement *= -1
-                    movement[0], movement[1] = movement[1], movement[0]
-                    coord = (array(pos) + movement).tolist()
-                    if coord[0] > 7 or coord[0] < 0 or coord[1] > 7 or coord[
-                            0] < 0:
-                        if len(piece["movement"]) == 1:
-                            continue
-                        else:
-                            break
-                    if self.board[coord[0]][coord[1]]:
-                        self.board[coord[0]][coord[1]]["checked"] = pos
-                        break
-                    else:
-                        self.board[coord[0]][coord[1]] = {
-                            "image": "Tile.png",
-                            "name": pos
-                        }
-            CHECKED = True
-            self.update() """
-""" print(piece, pos)
-        global CHECKED
-        while CHECKED:
-            if self.board[pos[0]][pos[1]]:
-                if self.board[pos[0]][pos[1]]["checked"]:
-                    previous = self.board[pos[0]][pos[1]]["checked"]
-                    self.move(previous, pos)
-                    try:
-                        if self.board[previous[0]][previous[1]]["name"]:
-                            self.board[previous[0]][
-                                previous[1]]["checked"] = False
-                    except (KeyError, TypeError):
-                        self.board[previous[0]][previous[1]] = None
-                    CHECKED = False
-                    return 0
-            if piece:
-                self.update()
-            CHECKED = False
-
-        for i in range(len(piece["movement"])):
-            for j in range(len(piece["movement"][i])):
-                movement = array(piece["movement"][i][j])
-                if piece["player"]:
-                    movement *= -1
-                movement[0], movement[1] = movement[1], movement[0]
-                coord = (array(pos) + movement).tolist()
-
-                if coord[0] > 7 or coord[0] < 0 or coord[1] > 7 or coord[0] < 0:
-                    break
-                blit("Tile.png", TILE, self.coordinates(coord[0], coord[1]))
-                checking = True
-                try:
-                    self.board[coord[0]][coord[1]]["checked"] = pos
-                except:
-                    self.board[coord[0]][coord[1]] = {"checked": pos}
-
-                if self.board[coord[0]][coord[1]]:
-                    break
-        CHECKED = True """
