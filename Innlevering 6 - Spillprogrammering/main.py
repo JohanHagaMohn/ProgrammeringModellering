@@ -97,6 +97,7 @@ class Board():
                 if self.board[new[0]][new[1]]["name"] == "Lever":
                     # Starter så på nytt
                     self.__init__()
+                    self.update()
                     return 0
             except KeyError:
                 pass
@@ -131,33 +132,43 @@ class Board():
                             blit("Tile.png", TILE, self.coordinates(x, y))
 
     def check(self, piece, pos):
-        if not self.checked:
-            if not piece["checked"]:
-                for i in range(len(piece["movement"][0])):
-                    for j in range(len(piece["movement"])):
-                        movement = array(piece["movement"][j][i])
-                        if piece["player"]:
-                            movement *= -1
-                        movement[0], movement[1] = movement[1], movement[0]
-                        coord = (array(pos) + movement).tolist()
-                        if coord[0] < 0 or coord[0] > 7 or coord[
-                                1] < 0 or coord[1] > 7:
-                            break
-                        piece["checked"].append(coord)
-                        if self.board[coord[0]][coord[1]]:
-                            break
-                if piece["checked"]:
-                    self.checked = pos
-                    self.update()
-        else:
-            self.board[self.checked[0]][self.checked[1]]["checked"] = []
-            self.move(self.checked, pos)
-            self.checked = False
+        """ Sjekker om brikken skal flyttes eller om lovlige trekk skal vises. """
 
+        # Er noe selektert?
+        if not self.checked:
+            for i in range(len(piece["movement"][0])):
+                for j in range(len(piece["movement"])):
+                    movement = array(piece["movement"][j][i])
+                    if piece["player"]:
+                        movement *= -1
+                    movement[0], movement[1] = movement[1], movement[0]
+                    coord = (array(pos) + movement).tolist()
+                    if coord[0] < 0 or coord[0] > 7 or coord[1] < 0 or coord[
+                            1] > 7:
+                        break
+                    if self.board[coord[0]][coord[1]]:
+                        if self.board[coord[0]][
+                                coord[1]]["player"] == piece["player"]:
+                            break
+                    piece["checked"].append(coord)
+                    if self.board[coord[0]][coord[1]]:
+                        break
+            if piece["checked"]:
+                self.checked = pos
+                self.update()
+        else:
+            valid = pos in self.board[self.checked[0]][
+                self.checked[1]]["checked"]
+            self.board[self.checked[0]][self.checked[1]]["checked"] = []
+            if valid:
+                self.move(self.checked, pos)
+            else:
+                self.update()
+            self.checked = False
+        print("hi")
         # if player's move: (if not piece or piece["player"])
 
         # player's move is false
-        
 
     def select(self, pos):
         """ Går igjennom hitboksen og finner indexen. """
@@ -179,7 +190,7 @@ def blit(path, dim=DEFAULT, pos=(0, 0)):
 
 
 def hitbox(pos, coords):
-    """ Finner ut om et museklikk er innenfor en hitboks, uavhendig av skjermoppløsning. """
+    """ Finner ut om et museklikk er innenfor en hitboks, uavhengig av skjermoppløsning. """
 
     scaling = array([SIZE[0] / DEFAULT[0], SIZE[1] / DEFAULT[1]])
     coords = array(coords) * scaling
@@ -189,6 +200,8 @@ def hitbox(pos, coords):
 
 if __name__ == "__main__":
     main()
+
+# Ubrukelige versjoner av board.check():
 """ global TURN, CHECKED
         if piece and not CHECKED:
             for i in range(len(piece["movement"])):
@@ -222,7 +235,6 @@ if __name__ == "__main__":
             if self.board[pos[0]][pos[1]]["checked"]:
                 self.move(self.board[pos[0]][pos[1]]["checked"], pos)
         CHECKED = not CHECKED """
-
 """ global CHECKED
         if CHECKED and self.board[pos[0]][pos[1]]:
             if self.board[pos[0]][pos[1]]["checked"]:
