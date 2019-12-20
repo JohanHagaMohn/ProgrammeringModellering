@@ -2,11 +2,11 @@ from json import load
 from pylab import array, append
 import pygame as pg
 
-# Ikke konstante konstanter
+# Ikke konstante konstanter (den beste typen konstanter)
 DEFAULT = (1280, 800)
 WINDOW = pg.display.set_mode(DEFAULT, pg.RESIZABLE)
 SIZE = DEFAULT
-TITLE = True
+TITLE = None
 TILE = [71, 71]
 
 
@@ -17,9 +17,7 @@ def main():
 
     pg.display.set_caption("Organsjakk")
 
-    # Legger til bakgrunn
-    blit("Bakgrunn.jpg")
-    blit("Startmeny.png")
+    menu()
 
     # Legger til musikk
     pg.mixer.music.load("./Media/Musikk.wav")
@@ -50,6 +48,14 @@ def main():
     # Slutter programmer ved pg.QUIT.
     pg.quit()
     quit()
+
+
+def menu():
+    """ Legger til bakgrunn """
+    global TITLE
+    TITLE = True
+    blit("Bakgrunn.jpg")
+    blit("Startmeny.png")
 
 
 class Board():
@@ -97,7 +103,7 @@ class Board():
                 if self.board[new[0]][new[1]]["name"] == "Lever":
                     # Starter så på nytt
                     self.__init__()
-                    self.update()
+                    menu()
                     return 0
             except KeyError:
                 pass
@@ -134,38 +140,94 @@ class Board():
     def check(self, piece, pos):
         """ Sjekker om brikken skal flyttes eller om lovlige trekk skal vises. """
 
-        # Er noe selektert?
+        # Er ingenting selektert?
         if not self.checked:
+            # Går igjennom trekkene i skalerende rekkefølge
             for i in range(len(piece["movement"][0])):
                 for j in range(len(piece["movement"])):
+                    # Gjør om til array
                     movement = array(piece["movement"][j][i])
+                    # Inverterer arrayen ved spillerbrikke
                     if piece["player"]:
                         movement *= -1
+                    # Reverserer arrayen fordi det er stress å endre alle i json filen
                     movement[0], movement[1] = movement[1], movement[0]
+                    # Legger sammen arrayen med brikkens posisjon
                     coord = (array(pos) + movement).tolist()
+                    # Hvis trekket er utenfor brettet, gå til neste retning
                     if coord[0] < 0 or coord[0] > 7 or coord[1] < 0 or coord[
                             1] > 7:
                         break
-                    if self.board[coord[0]][coord[1]]:
+                    # Hvis det er en tarm, blir livet igjen litt styr
+                    elif piece["name"] == "Tarm":
+                        attacks = [(array(coord) + array([0, 1])).tolist(),
+                                   (array(coord) + array([0, -1])).tolist()]
+                        for attack in attacks:
+                            if not (attack[0] < 0 or attack[0] > 7
+                                    or attack[1] < 0 or attack[1] > 7):
+                                if self.board[attack[0]][attack[1]]:
+                                    if piece["player"] != self.board[
+                                            attack[0]][attack[1]]["player"]:
+                                        piece["checked"].append(attack)
+                        if self.board[coord[0]][coord[1]]:
+                            break
+                    # Hvis trekket møter en egen brikke, gå til neste retning
+                    elif self.board[coord[0]][coord[1]]:
                         if self.board[coord[0]][
                                 coord[1]]["player"] == piece["player"]:
                             break
+                    # Legger til trekket
                     piece["checked"].append(coord)
+                    # Hvis trekket møter en motstanderbrikke, gå til neste retning
                     if self.board[coord[0]][coord[1]]:
                         break
+            # Oppdaterer posisjonen med markører hvis det var noen gyldige trekk
             if piece["checked"]:
+                # Lagrer brikkens posisjon som vi kan bruke senere
                 self.checked = pos
                 self.update()
         else:
+            # Finner ut om trekket sammenfaller med et gyldig trekk
             valid = pos in self.board[self.checked[0]][
                 self.checked[1]]["checked"]
+            # Tarmen forfremmes hvis trekket er mulig
+            if valid and self.board[self.checked[0]][
+                    self.checked[1]]["name"] == "Tarm":
+                # Sjekker om tarmen når andre side
+                other_side = 0 if self.board[self.checked[0]][
+                    self.checked[1]]["player"] else 7
+                if pos[0] == other_side:
+                    # Henter hjertedata
+                    with open('./pieces.json', "r") as file:
+                        for key, value in load(file).items():
+                            if key.capitalize() == "Hjerte":
+                                # Oppdaterer tarmens data
+                                movement = [
+                                    (array(value["movement"]) * i).tolist()
+                                    for i in range(1, value["scalar"] + 1)
+                                ]
+                                self.board[self.checked[0]][
+                                    self.checked[1]] = {
+                                        "name":
+                                        key.capitalize(),
+                                        "player":
+                                        self.board[self.checked[0]][
+                                            self.checked[1]]["player"],
+                                        "movement":
+                                        movement,
+                                        "image":
+                                        value["image"],
+                                        "checked": []
+                                    }
+            # Resetter listen
             self.board[self.checked[0]][self.checked[1]]["checked"] = []
+            # Flytter brikken om trekket er gyldig, ellers tas bort markørene
             if valid:
                 self.move(self.checked, pos)
             else:
                 self.update()
+            # Resetter checked
             self.checked = False
-        print("hi")
         # if player's move: (if not piece or piece["player"])
 
         # player's move is false
