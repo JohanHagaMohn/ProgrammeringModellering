@@ -191,6 +191,12 @@ class Board():
                                         piece["checked"].append(attack)
                         if self.board[coord[0]][coord[1]]:
                             break
+                        else:
+                            # Dobbelt steg ved første tarmtrekk
+                            double = (array(pos) + movement * 2).tolist()
+                            start = 6 if piece["player"] else 1
+                            if not self.board[double[0]][double[1]] and pos[0] == start:
+                                piece["checked"].append(double)
                     # Hvis trekket møter en egen brikke, gå til neste retning
                     elif self.board[coord[0]][coord[1]]:
                         if self.board[coord[0]][coord[1]]["player"] == piece["player"]:
