@@ -32,4 +32,7 @@ ylabel("Temperatur (C)")
 # Bemerk at den deriverte er én mindre fordi den trenger to punkter for å finne endring. Derfor ekskluderer jeg siste tidsverdi
 plot(tid, t, "g", tid[:-1], tder, "r")
 legend(["Temperatur", "Temperaturendring"])
+axhline(y=sluttemperatur, color="blue")
+axhline(y=0, color="black")
+axvline(x=0, color="black")
 show()

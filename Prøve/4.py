@@ -24,7 +24,7 @@ def halver(f,a=10, b=90, tol=1E-8):
     return m
 
 # Finner når forskjellen er 0
-print(f'Løsningene er like ved {halver(likevekt)} grader C')
+print(f'Løsligheten er lik ved {halver(likevekt)} grader C')
 
 # Plotter alle tre funksjonene i pylab (masse snacks)
 x = linspace(0, 90, 1000)
